@@ -1,0 +1,10 @@
+{
+  "name": "org.cyclopsframework.states",
+  "version": "0.1.0",
+  "displayName": "Cyclops States",
+  "description": "Tired of using clunky Monobehaviours for state management? Ever wished Unity had a built-in Finite State Machine API? Want to tie async lifetimes to state lifetimes? Cyclops States was designed to resolve all of these concerns. It provides a classic FSM with the transition handling you already know, but with more options such as state stacking.",
+  "unity": "2023.3",
+  "author": {
+    "name": "Mark Davis"
+  }
+}
