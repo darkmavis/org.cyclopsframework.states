@@ -95,9 +95,10 @@ namespace Cyclops.States
             if (!topState.IsActive)
                 topState.Start();
             
-            if (topState.QueryTransitions(out _nextState))
+            if (topState.QueryTransitions(out _nextState, out StackOp op))
             {
-                topState.Stop();
+                if (op is StackOp.Replace or StackOp.Pop)
+                    topState.Stop();
             }
             else
             {
@@ -108,9 +109,12 @@ namespace Cyclops.States
                 }
                 
                 topState.Update();
-                
-                if (topState.QueryTransitions(out _nextState))
-                    topState.Stop();
+
+                if (topState.QueryTransitions(out _nextState, out op))
+                {
+                    if (op is StackOp.Replace or StackOp.Pop)
+                        topState.Stop();
+                }
             }
             
             if (topState.IsStopping)

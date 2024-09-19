@@ -22,5 +22,6 @@ namespace Cyclops.States
     {
         public Func<bool> Condition { get; set; }
         public CyclopsBaseState Target { get; set; }
+        public StackOp Op { get; set; }
     }
 }
