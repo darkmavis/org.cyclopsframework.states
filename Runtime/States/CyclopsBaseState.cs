@@ -130,6 +130,26 @@ namespace Cyclops.States
         {
             AddTransition(new CyclopsStateTransition { Target = target, Condition = predicate });
         }
+        
+        public void AddPushTransition(CyclopsBaseState target, Func<bool> predicate)
+        {
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = target,
+                Condition = predicate,
+                Op = StackOp.Push
+            });
+        }
+        
+        public void AddPopTransition(Func<bool> predicate)
+        {
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = null,
+                Condition = predicate,
+                Op = StackOp.Pop
+            });
+        }
 
         /// <summary>
         /// Add an exit transition from this state to a target state that occurs when this state has stopped.
@@ -146,9 +166,10 @@ namespace Cyclops.States
         /// <see cref="QueryTransitions"/> is called by the hosting state machine and should not be otherwise called.
         /// <seealso cref="CyclopsStateMachine"/>
         /// </summary>
-        internal bool QueryTransitions(out CyclopsBaseState nextBaseState)
+        internal bool QueryTransitions(out CyclopsBaseState nextBaseState, out StackOp op)
         {
             nextBaseState = null;
+            op = StackOp.Replace;
 
             foreach (CyclopsStateTransition transition in _transitions)
             {
@@ -156,6 +177,7 @@ namespace Cyclops.States
                     continue;
                 
                 nextBaseState = transition.Target;
+                op = transition.Op;
 
                 return true;
             }
@@ -165,7 +187,7 @@ namespace Cyclops.States
 
         /// <summary>
         /// <see cref="OnEnter"/> is invoked when this state is entered.
-        /// A state can not be entered more than once.
+        /// A state can not be entered again until after it is exited.
         /// <seealso cref="CyclopsStateMachine"/>
         /// </summary>
         protected virtual void OnEnter() { }
