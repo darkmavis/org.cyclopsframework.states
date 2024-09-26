@@ -1,0 +1,20 @@
+{
+    "name": "States.Tests",
+    "rootNamespace": "Cyclops.States.Tests",
+    "references": [
+        "GUID:03ad1905a1caf2d4badc118fcbe220b4"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
