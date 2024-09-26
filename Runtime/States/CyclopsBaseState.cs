@@ -40,7 +40,7 @@ namespace Cyclops.States
         public CancellationToken ExitCancellationToken { get; private set; }
         public bool IsActive { get; private set; }
         internal bool IsStopping { get; private set; }
-        internal bool IsForegroundState { get; set; }
+        public bool IsForegroundState { get; internal set; }
         internal bool JustEnteredBackgroundMode { get; set; }
         internal bool JustExitedBackgroundMode { get; set; }
         
