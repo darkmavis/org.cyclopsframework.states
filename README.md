@@ -7,7 +7,7 @@
 * As much as possible, transitions needed to be external, a visible part of that "table of contents".
 * It needed to improve working with async/await in Unity, so that async lifetimes could be tied to state lifetimes.
 * It needed the concept of foreground and background states, allowing special background updates when needed.
-* It had to be as determinstic as possible, allowing predictable setup and unwinding in the expected order while being failure resistant.
+* It had to be as deterministic as possible, allowing predictable setup and unwinding in the expected order while being failure resistant.
 * It also had to be easy to extend inline without creating new classes, but you can if you'd prefer.
 
 ### What else?
