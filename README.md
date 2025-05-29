@@ -1,11 +1,19 @@
 # About Cyclops States
 
 ### Why?
-* Tired of using clunky Monobehaviours for state management?
-* Ever wished Unity had a built-in Finite State Machine API?
-* Want to tie async lifetimes to state lifetimes?
+* I wanted a simple lightweight stack-based state machine that could double as a classic FSM at each level.
+* It needed to be easy to create in code with minimal fuss.
+* It needed to be easy to read, meaning a contiguous linear flow resembling a table of contents.
+* As much as possible, transitions needed to be external, a visible part of that "table of contents".
+* It needed to improve working with async/await in Unity, so that async lifetimes could be tied to state lifetimes.
+* It needed the concept of foreground and background states, allowing special background updates when needed.
+* It had to be as determinstic as possible, allowing predictable setup and unwinding in the expected order while being failure resistant.
+* It also had to be easy to extend inline without creating new classes, but you can if you'd prefer.
 
-Cyclops States was designed to resolve all of these concerns. It provides a classic FSM with the transition handling you already know, but with more options.
+### What else?
+* It can operate as an FSM, pushdown automaton, or even a behavior tree depending on perspective and usage. Creating a behavior tree requires writing custom nodes, but the shape is right.
+* It features predicate driven transitions that go beyond typical state replacement. Transitions that push, pop, and react to Actions and Action events are included.
+* Transition related callbacks are included for just about every situation that might be needed.
 
 ### States Are Stackable
 
