@@ -14,35 +14,7 @@
 * It can operate as an FSM, pushdown automaton, or even a behavior tree depending on perspective and usage. Creating a behavior tree requires writing custom nodes, but the shape is right.
 * It features predicate driven transitions that go beyond typical state replacement. Transitions that push, pop, and react to Actions and Action events are included.
 * Transition related callbacks are included for just about every situation that might be needed.
-
-### States Are Stackable
-
-In addition to transitioning from one state to another, states can also be stacked. When a new state (such as a modal dialog) is pushed onto the stack without being the result of a transition from another state, the state below will enter a background update mode. You can provide whatever functionality you feel is appropriate for a background update vs a foreground update.
-
-There's a reasonable chance that you'll want to forego some input processing when a state is in the background, but provide that processing during a foreground update. Perhaps your game uses a development console that should be accessible from anywhere. You might want to include the keyboard toggle (maybe the [ ` ] key?) in the background update of the lowest state in the stack. That way, your console will always be accessible.
-
-If the top level state exits without a transition to another state, it's popped off the stack, and the new topmost state will transition from background mode to foreground mode.
-
-### Async Lifetimes: Fire And Forget
-
-This is a real quality of life feature. Each state contains an ExitCancellationToken that empowers you with the ability to link the lifetime of an async to the lifetime of a logical game state no matter how large or small. By providing the async with a state's own myState.ExitCancelationToken, you know for sure, that when a state exits, it will cancel all the asyncs that are logically associated with it. So for example, when a Gameplay state transitions to a GameOver state, all asyncs associated with Gameplay will be canceled and cleaned up. No worries. It's fully fire and forget.
-
-You may be wondering... what if I hit the stop button and my game immediately exits from some arbitrary state in the editor? Won't those asyncs keep running in the background even when we're not in play mode? It's pretty annoying when they do that.
-
-Good news here. Regardless of how your app exits, as long as there's not a blocking bug within your state's exit handler, you're fine. State machines can be forceably stopped. Just ensure that your state machine forceably stops when the application stops and all states will be exited automatically behind the scenes and in the expected order.
-
-### States Can Have Multiple Transitions
-
-Each state can be provided with an unlimited number of transitions to other states. Transitions contain a target state to transition to and a predicate that indicates when that transition should be occur.
-
-#### Exit Transitions
-Exit transitions are used when a state is manually stopped, typically from within it's own logic. These transitions do not expose their predicate. Simply provide a target state, and you're good to go. As mentioned above, when an exit transition doesn't exist, instead of being replaced, the state will be popped off the stack and if another state exists below, it will become the active state updating in the foreground.
-
-#### Scope, Best Practices, And Common Pitfalls
-For all other transitions, it's generally best to reason about a state using information external to that state. If a transition relies on the specific existance or properties of a state then it may not be possible to simply swap in a different state like a composable building block. Dependency injection can make this easy.
-
-## Origin
-This project and the following docs were borrowed directly from [Cyclops Framework](https://github.com/darkmavis/com.smonch.cyclopsframework). This is a stripped down version of that framework that focuses on the state machine section which was added at years after the original development began. 
+* States can use as many transitions as needed.
 
 # Awaitable Integration
 
@@ -117,11 +89,9 @@ public class Bootstrap : MonoBehaviour
     {
         var fsm = new CyclopsStateMachine();
         var gameplay = new Gameplay(_gameplayCamera);
-        var unloader = new CyclopsState
-        {
-            Entered = () => Debug.Log("Unloader: Entered"),
-            Exited = () => Debug.Log("Unloader: Exited")
-        };
+        var unloader = new CyclopsState;
+        unloader.Entered = () => Debug.Log("Unloader: Entered");
+        unloader.Exited = () => Debug.Log("Unloader: Exited");
         
         gameplay.AddTransition(unloader, () => Keyboard.current.escapeKey.isPressed);
         fsm.PushState(gameplay);
