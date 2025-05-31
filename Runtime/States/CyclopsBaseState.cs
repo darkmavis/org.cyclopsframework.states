@@ -115,6 +115,8 @@ namespace Cyclops.States
         /// Transitions can not be removed, nor should they be.
         /// <seealso cref="CyclopsStateMachine"/>
         /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="predicate">trigger condition</param>
         public void AddTransition(CyclopsStateTransition transition)
         {
             _transitions.Add(transition);
@@ -126,11 +128,20 @@ namespace Cyclops.States
         /// Transitions can not be removed, nor should they be.
         /// <seealso cref="CyclopsStateMachine"/>
         /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="predicate">trigger condition</param>
         public void AddTransition(CyclopsBaseState target, Func<bool> predicate)
         {
             AddTransition(new CyclopsStateTransition { Target = target, Condition = predicate });
         }
         
+        /// <summary>
+        /// Add a transition that pushes the target state above this state on the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="predicate">trigger condition</param>
         public void AddPushTransition(CyclopsBaseState target, Func<bool> predicate)
         {
             AddTransition(new CyclopsStateTransition
@@ -141,6 +152,12 @@ namespace Cyclops.States
             });
         }
         
+        /// <summary>
+        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="predicate">trigger condition</param>
         public void AddPopTransition(Func<bool> predicate)
         {
             AddTransition(new CyclopsStateTransition
@@ -157,6 +174,7 @@ namespace Cyclops.States
         /// Transitions can not be removed, nor should they be.
         /// <seealso cref="CyclopsStateMachine"/>
         /// </summary>
+        /// <param name="target">target state</param>
         public void AddExitTransition(CyclopsBaseState target)
         {
             AddTransition(new CyclopsStateTransition { Target = target, Condition = () => IsStopping || !IsActive });
@@ -166,6 +184,8 @@ namespace Cyclops.States
         /// <see cref="QueryTransitions"/> is called by the hosting state machine and should not be otherwise called.
         /// <seealso cref="CyclopsStateMachine"/>
         /// </summary>
+        /// <param name="nextBaseState">next target state</param>
+        /// <param name="StackOp">stack operation (push, pop, replace)</param>
         internal bool QueryTransitions(out CyclopsBaseState nextBaseState, out StackOp op)
         {
             nextBaseState = null;
@@ -302,7 +322,14 @@ namespace Cyclops.States
                 // ignored
             }
         }
-        
+
+        /// <summary>
+        /// Add a transition from this state to the target state based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
         public void AddTransition(CyclopsBaseState target, ref Action multicastDelegate)
         {
             Action localMulticastDelegate = null;
@@ -324,6 +351,13 @@ namespace Cyclops.States
             }
         }
         
+        /// <summary>
+        /// Add a transition from this state to the target state based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
         public void AddTransition<T>(CyclopsBaseState target, ref Action<T> multicastDelegate)
         {
             Action<T> localMulticastDelegate = null;
@@ -345,6 +379,13 @@ namespace Cyclops.States
             }
         }
         
+        /// <summary>
+        /// Add a transition from this state to the target state based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
         public void AddTransition<T1, T2>(CyclopsBaseState target, ref Action<T1, T2> multicastDelegate)
         {
             Action<T1, T2> localMulticastDelegate = null;
@@ -366,6 +407,13 @@ namespace Cyclops.States
             }
         }
         
+        /// <summary>
+        /// Add a transition from this state to the target state based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
         public void AddTransition<T1, T2, T3>(CyclopsBaseState target, ref Action<T1, T2, T3> multicastDelegate)
         {
             Action<T1, T2, T3> localMulticastDelegate = null;
@@ -387,6 +435,13 @@ namespace Cyclops.States
             }
         }
         
+        /// <summary>
+        /// Add a transition from this state to the target state based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
         public void AddTransition<T1, T2, T3, T4>(CyclopsBaseState target, ref Action<T1, T2, T3, T4> multicastDelegate)
         {
             Action<T1, T2, T3, T4> localMulticastDelegate = null;
@@ -407,7 +462,321 @@ namespace Cyclops.States
                 localMulticastDelegate -= OnAction;
             }
         }
+
+        /// <summary>
+        /// Add a transition that pushes the target state above this state on the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPushTransition(CyclopsBaseState target, ref Action multicastDelegate)
+        {
+            Action localMulticastDelegate = null;
+            bool wasTriggered = false;
+
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = target,
+                Condition = predicate,
+                Op = StackOp.Push
+            });
+
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction()
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
+
+        /// <summary>
+        /// Add a transition that pushes the target state above this state on the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPushTransition<T>(CyclopsBaseState target, ref Action<T> multicastDelegate)
+        {
+            Action<T> localMulticastDelegate = null;
+            bool wasTriggered = false;
+            
+            AddTransition(new CyclopsStateTransition { Target = target, Condition = () => wasTriggered} );
+            
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction(T x)
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
         
+        /// <summary>
+        /// Add a transition that pushes the target state above this state on the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPushTransition<T1, T2>(CyclopsBaseState target, ref Action<T1, T2> multicastDelegate)
+        {
+            Action<T1, T2> localMulticastDelegate = null;
+            bool wasTriggered = false;
+            
+            AddTransition(new CyclopsStateTransition { Target = target, Condition = () => wasTriggered} );
+            
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction(T1 x, T2 y)
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
+        
+        /// <summary>
+        /// Add a transition that pushes the target state above this state on the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPushTransition<T1, T2, T3>(CyclopsBaseState target, ref Action<T1, T2, T3> multicastDelegate)
+        {
+            Action<T1, T2, T3> localMulticastDelegate = null;
+            bool wasTriggered = false;
+            
+            AddTransition(new CyclopsStateTransition { Target = target, Condition = () => wasTriggered} );
+            
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction(T1 x, T2 y, T3 z)
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
+        
+        /// <summary>
+        /// Add a transition that pushes the target state above this state on the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPushTransition<T1, T2, T3, T4>(CyclopsBaseState target, ref Action<T1, T2, T3, T4> multicastDelegate)
+        {
+            Action<T1, T2, T3, T4> localMulticastDelegate = null;
+            bool wasTriggered = false;
+            
+            AddTransition(new CyclopsStateTransition { Target = target, Condition = () => wasTriggered} );
+            
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction(T1 x, T2 y, T3 z, T4 w)
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
+
+        /// <summary>
+        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPopTransition(CyclopsBaseState target, ref Action multicastDelegate)
+        {
+            Action localMulticastDelegate = null;
+            bool wasTriggered = false;
+
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = null,
+                Condition = predicate,
+                Op = StackOp.Pop
+            });
+
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction()
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
+        
+        /// <summary>
+        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPopTransition<T>(CyclopsBaseState target, ref Action<T> multicastDelegate)
+        {
+            Action<T> localMulticastDelegate = null;
+            bool wasTriggered = false;
+            
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = null,
+                Condition = predicate,
+                Op = StackOp.Pop
+            });
+            
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction(T x)
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
+        
+        /// <summary>
+        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPopTransition<T1, T2>(CyclopsBaseState target, ref Action<T1, T2> multicastDelegate)
+        {
+            Action<T1, T2> localMulticastDelegate = null;
+            bool wasTriggered = false;
+            
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = null,
+                Condition = predicate,
+                Op = StackOp.Pop
+            });
+            
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction(T1 x, T2 y)
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
+        
+        /// <summary>
+        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPopTransition<T1, T2, T3>(CyclopsBaseState target, ref Action<T1, T2, T3> multicastDelegate)
+        {
+            Action<T1, T2, T3> localMulticastDelegate = null;
+            bool wasTriggered = false;
+            
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = null,
+                Condition = predicate,
+                Op = StackOp.Pop
+            });
+            
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction(T1 x, T2 y, T3 z)
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
+        
+        /// <summary>
+        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Feel free to add as many transitions as needed.
+        /// Transitions can not be removed, nor should they be.
+        /// </summary>
+        /// <param name="target">target state</param>
+        /// <param name="multicastDelegate">trigger action</param>
+        public void AddPopTransition<T1, T2, T3, T4>(CyclopsBaseState target, ref Action<T1, T2, T3, T4> multicastDelegate)
+        {
+            Action<T1, T2, T3, T4> localMulticastDelegate = null;
+            bool wasTriggered = false;
+            
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = null,
+                Condition = predicate,
+                Op = StackOp.Pop
+            });
+            
+            multicastDelegate += OnAction;
+            localMulticastDelegate = multicastDelegate;
+            Assert.IsNotNull(localMulticastDelegate, "Multicast delegate must not be null.");
+
+            return;
+            
+            void OnAction(T1 x, T2 y, T3 z, T4 w)
+            {
+                wasTriggered = true;
+                // ReSharper disable once AccessToModifiedClosure
+                localMulticastDelegate -= OnAction;
+            }
+        }
+        
+        /// <summary>
+        /// Exit state when a multicastDelegate is invoked.
+        /// </summary>
+        /// <param name="multicastDelegate">trigger action</param>
         public void ExitOnAction(ref Action multicastDelegate)
         {
             Action localMulticastDelegate = null;
@@ -426,6 +795,10 @@ namespace Cyclops.States
             }
         }
         
+        /// <summary>
+        /// Exit state when a multicastDelegate is invoked.
+        /// </summary>
+        /// <param name="multicastDelegate">trigger action</param>
         public void ExitOnAction<T>(ref Action<T> multicastDelegate)
         {
             Action<T> localMulticastDelegate = null;
@@ -444,6 +817,10 @@ namespace Cyclops.States
             }
         }
         
+        /// <summary>
+        /// Exit state when a multicastDelegate is invoked.
+        /// </summary>
+        /// <param name="multicastDelegate">trigger action</param>
         public void ExitOnAction<T1, T2>(ref Action<T1, T2> multicastDelegate)
         {
             Action<T1, T2> localMulticastDelegate = null;
@@ -462,6 +839,10 @@ namespace Cyclops.States
             }
         }
         
+        /// <summary>
+        /// Exit state when a multicastDelegate is invoked.
+        /// </summary>
+        /// <param name="multicastDelegate">trigger action</param>
         public void ExitOnAction<T1, T2, T3>(ref Action<T1, T2, T3> multicastDelegate)
         {
             Action<T1, T2, T3> localMulticastDelegate = null;
@@ -480,6 +861,10 @@ namespace Cyclops.States
             }
         }
         
+        /// <summary>
+        /// Exit state when a multicastDelegate is invoked.
+        /// </summary>
+        /// <param name="multicastDelegate">trigger action</param>
         public void ExitOnAction<T1, T2, T3, T4>(ref Action<T1, T2, T3, T4> multicastDelegate)
         {
             Action<T1, T2, T3, T4> localMulticastDelegate = null;
