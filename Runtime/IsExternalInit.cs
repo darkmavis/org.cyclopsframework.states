@@ -14,12 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Cyclops.States
+// ReSharper disable once CheckNamespace
+namespace System.Runtime.CompilerServices
 {
-    public enum StackOp
-    {
-        Replace,
-        Push,
-        Pop
-    }
+    /// <summary>
+    /// Polyfill to enable C# 9 init-only property setters in Unity.
+    /// </summary>
+    internal static class IsExternalInit { }
 }
+

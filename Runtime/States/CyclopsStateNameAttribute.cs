@@ -1,4 +1,4 @@
-﻿// Cyclops States
+// Cyclops States
 // 
 // Copyright 2025 Mark Davis
 // 
@@ -19,23 +19,14 @@ using System;
 namespace Cyclops.States
 {
     /// <summary>
-    /// Represents a transition from one state to another.
+    /// Optional attribute to provide a custom display name for a state in debug overlays.
+    /// When present, the Name will be used instead of the class name.
     /// </summary>
-    public struct CyclopsStateTransition
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    public sealed class CyclopsStateNameAttribute : Attribute
     {
-        /// <summary>
-        /// Predicate that determines if this transition should fire.
-        /// </summary>
-        public Func<bool> Condition { get; set; }
-
-        /// <summary>
-        /// Target state to transition to. Null for Pop operations.
-        /// </summary>
-        public CyclopsState Target { get; set; }
-
-        /// <summary>
-        /// Stack operation to perform (Replace, Push, or Pop).
-        /// </summary>
-        public StackOp Op { get; set; }
+        public string Name { get; }
+        public CyclopsStateNameAttribute(string name) => Name = name;
     }
 }
+

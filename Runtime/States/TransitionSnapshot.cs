@@ -1,6 +1,6 @@
 // Cyclops States
 // 
-// Copyright 2024 Mark Davis
+// Copyright 2025 Mark Davis
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,19 @@
 
 namespace Cyclops.States
 {
-    public struct CyclopsStateUpdateContext
+    /// <summary>
+    /// Read-only snapshot of a transition for debug purposes.
+    /// </summary>
+    public readonly struct TransitionSnapshot
     {
-        public bool IsLayered { get; internal set; }
+        /// <summary>Stack operation (Replace, Push, or Pop).</summary>
+        public StackOp Op { get; init; }
+        
+        /// <summary>Full name of the target state, or null for Pop transitions.</summary>
+        public string TargetName { get; init; }
+        
+        /// <summary>Short name of the target state (class name only), or null for Pop transitions.</summary>
+        public string TargetShortName { get; init; }
     }
 }
+
