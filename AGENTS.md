@@ -234,3 +234,33 @@ Unit tests cover:
 
 - Unity 2023.3+ / Unity 6000
 - Uses: `UnityEngine.Pool`, `UnityEngine.Awaitable`, `System.Threading.CancellationToken`
+
+## Future Considerations
+
+### Event Dispatch System (Under Consideration)
+
+A DOM/Flash-style event propagation system for the state stack:
+
+- **Capture phase**: Events dispatch from top of stack downward (foreground → background)
+- States register type-safe handlers via `Handle<T>(Func<T, DispatchResult>)`
+- Handlers return `Consume` (stop propagation) or `Propagate` (continue to next state)
+- Zero-boxing design using static generic dictionaries
+
+**Primary use case**: Input handling for layered UI (modals blocking input, pause menus, etc.)
+
+```csharp
+// Proposed API sketch
+var pauseMenu = new CyclopsState { Name = "PauseMenu" }
+    .HandleAndConsume<PauseInput>(_ => Resume())   // Blocks propagation
+    .HandleAndConsume<MoveInput>(_ => { });        // Swallows movement
+
+// On CyclopsStateMachine
+fsm.Dispatch(new JumpInput());  // Top state gets first crack
+```
+
+**Design notes**:
+- Keep separate from BT result flow (transitions handle that well already)
+- Bridge class for Unity Input System integration (keeps core dependency-free)
+- Consider whether bubble phase (bottom → top) is needed (probably not for linear stack)
+
+**Status**: Deferred for later evaluation. Current transitions + lifecycle hooks may suffice for most cases.
