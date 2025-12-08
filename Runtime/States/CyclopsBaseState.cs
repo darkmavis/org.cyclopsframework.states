@@ -153,7 +153,7 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Add a transition that pops this state off the stack based on a condition.
         /// Feel free to add as many transitions as needed.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
@@ -478,7 +478,7 @@ namespace Cyclops.States
             AddTransition(new CyclopsStateTransition
             {
                 Target = target,
-                Condition = predicate,
+                Condition = () => wasTriggered,
                 Op = StackOp.Push
             });
 
@@ -508,7 +508,12 @@ namespace Cyclops.States
             Action<T> localMulticastDelegate = null;
             bool wasTriggered = false;
             
-            AddTransition(new CyclopsStateTransition { Target = target, Condition = () => wasTriggered} );
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = target,
+                Condition = () => wasTriggered,
+                Op = StackOp.Push
+            });
             
             multicastDelegate += OnAction;
             localMulticastDelegate = multicastDelegate;
@@ -536,7 +541,12 @@ namespace Cyclops.States
             Action<T1, T2> localMulticastDelegate = null;
             bool wasTriggered = false;
             
-            AddTransition(new CyclopsStateTransition { Target = target, Condition = () => wasTriggered} );
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = target,
+                Condition = () => wasTriggered,
+                Op = StackOp.Push
+            });
             
             multicastDelegate += OnAction;
             localMulticastDelegate = multicastDelegate;
@@ -564,7 +574,12 @@ namespace Cyclops.States
             Action<T1, T2, T3> localMulticastDelegate = null;
             bool wasTriggered = false;
             
-            AddTransition(new CyclopsStateTransition { Target = target, Condition = () => wasTriggered} );
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = target,
+                Condition = () => wasTriggered,
+                Op = StackOp.Push
+            });
             
             multicastDelegate += OnAction;
             localMulticastDelegate = multicastDelegate;
@@ -592,7 +607,12 @@ namespace Cyclops.States
             Action<T1, T2, T3, T4> localMulticastDelegate = null;
             bool wasTriggered = false;
             
-            AddTransition(new CyclopsStateTransition { Target = target, Condition = () => wasTriggered} );
+            AddTransition(new CyclopsStateTransition
+            {
+                Target = target,
+                Condition = () => wasTriggered,
+                Op = StackOp.Push
+            });
             
             multicastDelegate += OnAction;
             localMulticastDelegate = multicastDelegate;
@@ -609,13 +629,12 @@ namespace Cyclops.States
         }
 
         /// <summary>
-        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Add a transition that pops this state off the stack based on a condition.
         /// Feel free to add as many transitions as needed.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
-        /// <param name="target">target state</param>
         /// <param name="multicastDelegate">trigger action</param>
-        public void AddPopTransition(CyclopsBaseState target, ref Action multicastDelegate)
+        public void AddPopTransition(ref Action multicastDelegate)
         {
             Action localMulticastDelegate = null;
             bool wasTriggered = false;
@@ -623,7 +642,7 @@ namespace Cyclops.States
             AddTransition(new CyclopsStateTransition
             {
                 Target = null,
-                Condition = predicate,
+                Condition = () => wasTriggered,
                 Op = StackOp.Pop
             });
 
@@ -642,13 +661,12 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Add a transition that pops this state off the stack based on a condition.
         /// Feel free to add as many transitions as needed.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
-        /// <param name="target">target state</param>
         /// <param name="multicastDelegate">trigger action</param>
-        public void AddPopTransition<T>(CyclopsBaseState target, ref Action<T> multicastDelegate)
+        public void AddPopTransition<T>(ref Action<T> multicastDelegate)
         {
             Action<T> localMulticastDelegate = null;
             bool wasTriggered = false;
@@ -656,7 +674,7 @@ namespace Cyclops.States
             AddTransition(new CyclopsStateTransition
             {
                 Target = null,
-                Condition = predicate,
+                Condition = () => wasTriggered,
                 Op = StackOp.Pop
             });
             
@@ -675,13 +693,12 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Add a transition that pops this state off the stack based on a condition.
         /// Feel free to add as many transitions as needed.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
-        /// <param name="target">target state</param>
         /// <param name="multicastDelegate">trigger action</param>
-        public void AddPopTransition<T1, T2>(CyclopsBaseState target, ref Action<T1, T2> multicastDelegate)
+        public void AddPopTransition<T1, T2>(ref Action<T1, T2> multicastDelegate)
         {
             Action<T1, T2> localMulticastDelegate = null;
             bool wasTriggered = false;
@@ -689,7 +706,7 @@ namespace Cyclops.States
             AddTransition(new CyclopsStateTransition
             {
                 Target = null,
-                Condition = predicate,
+                Condition = () => wasTriggered,
                 Op = StackOp.Pop
             });
             
@@ -708,13 +725,12 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Add a transition that pops this state off the stack based on a condition.
         /// Feel free to add as many transitions as needed.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
-        /// <param name="target">target state</param>
         /// <param name="multicastDelegate">trigger action</param>
-        public void AddPopTransition<T1, T2, T3>(CyclopsBaseState target, ref Action<T1, T2, T3> multicastDelegate)
+        public void AddPopTransition<T1, T2, T3>(ref Action<T1, T2, T3> multicastDelegate)
         {
             Action<T1, T2, T3> localMulticastDelegate = null;
             bool wasTriggered = false;
@@ -722,7 +738,7 @@ namespace Cyclops.States
             AddTransition(new CyclopsStateTransition
             {
                 Target = null,
-                Condition = predicate,
+                Condition = () => wasTriggered,
                 Op = StackOp.Pop
             });
             
@@ -741,13 +757,12 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pops the target state off the stack based on a condition.
+        /// Add a transition that pops this state off the stack based on a condition.
         /// Feel free to add as many transitions as needed.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
-        /// <param name="target">target state</param>
         /// <param name="multicastDelegate">trigger action</param>
-        public void AddPopTransition<T1, T2, T3, T4>(CyclopsBaseState target, ref Action<T1, T2, T3, T4> multicastDelegate)
+        public void AddPopTransition<T1, T2, T3, T4>(ref Action<T1, T2, T3, T4> multicastDelegate)
         {
             Action<T1, T2, T3, T4> localMulticastDelegate = null;
             bool wasTriggered = false;
@@ -755,7 +770,7 @@ namespace Cyclops.States
             AddTransition(new CyclopsStateTransition
             {
                 Target = null,
-                Condition = predicate,
+                Condition = () => wasTriggered,
                 Op = StackOp.Pop
             });
             
