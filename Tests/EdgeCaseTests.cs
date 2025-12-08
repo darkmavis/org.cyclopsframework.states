@@ -26,9 +26,9 @@ namespace Cyclops.States.Tests
         {
             var startOrder = new List<string>();
             var stateMachine = new CyclopsStateMachine();
-            var stateA = new CyclopsState { Entered = () => startOrder.Add("A") };
-            var stateB = new CyclopsState { Entered = () => startOrder.Add("B") };
-            var stateC = new CyclopsState { Entered = () => startOrder.Add("C") };
+            var stateA = new CyclopsState { OnEnter = () => startOrder.Add("A") };
+            var stateB = new CyclopsState { OnEnter = () => startOrder.Add("B") };
+            var stateC = new CyclopsState { OnEnter = () => startOrder.Add("C") };
             
             stateMachine.PushState(stateA);
             stateMachine.PushState(stateB);
@@ -48,7 +48,7 @@ namespace Cyclops.States.Tests
         {
             bool exitCalled = false;
             var stateMachine = new CyclopsStateMachine();
-            var state = new CyclopsState { Exited = () => exitCalled = true };
+            var state = new CyclopsState { OnExit = () => exitCalled = true };
             
             stateMachine.PushState(state);
             stateMachine.Update();
@@ -99,7 +99,7 @@ namespace Cyclops.States.Tests
         {
             int exitCount = 0;
             var stateMachine = new CyclopsStateMachine();
-            var state = new CyclopsState { Exited = () => ++exitCount };
+            var state = new CyclopsState { OnExit = () => ++exitCount };
             
             stateMachine.PushState(state);
             stateMachine.Update();
@@ -113,4 +113,3 @@ namespace Cyclops.States.Tests
         }
     }
 }
-

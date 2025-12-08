@@ -32,12 +32,12 @@ namespace Cyclops.States.Tests
             
             var stateMachine = new CyclopsStateMachine();
             var stateA = new CyclopsState();
-            stateA.Entered = () => ++enteredCount;
-            stateA.Updating = () => ++updatingCount;
-            stateA.Exited = () => ++exitedCount;
-            stateA.BackgroundModeEntered = () => ++backgroundModeEnteredCount;
-            stateA.BackgroundUpdating = () => ++backgroundUpdatingCount;
-            stateA.BackgroundModeExited = () => ++backgroundModeExitedCount;
+            stateA.OnEnter = () => ++enteredCount;
+            stateA.OnUpdate = () => ++updatingCount;
+            stateA.OnExit = () => ++exitedCount;
+            stateA.OnEnterBackground = () => ++backgroundModeEnteredCount;
+            stateA.OnBackgroundUpdate = () => ++backgroundUpdatingCount;
+            stateA.OnExitBackground = () => ++backgroundModeExitedCount;
             
             stateMachine.PushState(stateA);
             
@@ -143,7 +143,7 @@ namespace Cyclops.States.Tests
         {
             int enterCount = 0;
             var stateMachine = new CyclopsStateMachine();
-            var state = new CyclopsState { Entered = () => ++enterCount };
+            var state = new CyclopsState { OnEnter = () => ++enterCount };
             
             stateMachine.PushState(state);
             stateMachine.Update();
@@ -158,7 +158,7 @@ namespace Cyclops.States.Tests
         {
             int exitCount = 0;
             var stateMachine = new CyclopsStateMachine();
-            var state = new CyclopsState { Exited = () => ++exitCount };
+            var state = new CyclopsState { OnExit = () => ++exitCount };
             
             stateMachine.PushState(state);
             stateMachine.Update();
@@ -169,4 +169,3 @@ namespace Cyclops.States.Tests
         }
     }
 }
-

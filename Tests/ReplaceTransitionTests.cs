@@ -39,7 +39,7 @@ namespace Cyclops.States.Tests
             var stateB = new CyclopsState();
             bool exitedA = false;
             bool shouldTransition = false;
-            stateA.Exited = () => exitedA = true;
+            stateA.OnExit = () => exitedA = true;
             
             stateA.AddTransition(stateB, () => shouldTransition);
             stateMachine.PushState(stateA);
@@ -99,4 +99,3 @@ namespace Cyclops.States.Tests
         }
     }
 }
-

@@ -18,19 +18,6 @@ using NUnit.Framework;
 
 namespace Cyclops.States.Tests
 {
-    // Test state with custom name attribute
-    [CyclopsStateName("My Custom State")]
-    public class NamedTestState : CyclopsBaseState { }
-    
-    // Test state without attribute
-    public class UnnamedTestState : CyclopsBaseState { }
-    
-    // Test generic state
-    public class GenericTestState<T> : CyclopsBaseState { }
-    
-    // Test nested generic state
-    public class NestedGenericState<T1, T2> : CyclopsBaseState { }
-
     public class StateNameAttributeTests
     {
         [SetUp]
@@ -46,10 +33,10 @@ namespace Cyclops.States.Tests
         }
 
         [Test]
-        public void StateWithAttribute_UsesCustomName()
+        public void StateWithCustomName_UsesCustomName()
         {
             var fsm = new CyclopsStateMachine();
-            var state = new NamedTestState();
+            var state = new CyclopsState { Name = "My Custom State" };
             fsm.PushState(state);
             fsm.Update();
             
@@ -61,54 +48,26 @@ namespace Cyclops.States.Tests
         }
 
         [Test]
-        public void StateWithoutAttribute_UsesTypeName()
+        public void StateWithoutCustomName_UsesTypeName()
         {
             var fsm = new CyclopsStateMachine();
-            var state = new UnnamedTestState();
+            var state = new CyclopsState();
             fsm.PushState(state);
             fsm.Update();
             
             fsm.WithStateStackSnapshot(states =>
             {
-                Assert.AreEqual("UnnamedTestState", states[0].ShortName);
-                Assert.IsTrue(states[0].Name.EndsWith("UnnamedTestState"));
+                Assert.AreEqual("CyclopsState", states[0].ShortName);
+                Assert.IsTrue(states[0].Name.EndsWith("CyclopsState"));
             });
         }
 
         [Test]
-        public void GenericState_FormatsShortNameCorrectly()
+        public void TransitionTarget_WithCustomName_UsesCustomName()
         {
             var fsm = new CyclopsStateMachine();
-            var state = new GenericTestState<int>();
-            fsm.PushState(state);
-            fsm.Update();
-            
-            fsm.WithStateStackSnapshot(states =>
-            {
-                Assert.AreEqual("GenericTestState<Int32>", states[0].ShortName);
-            });
-        }
-
-        [Test]
-        public void NestedGenericState_FormatsShortNameCorrectly()
-        {
-            var fsm = new CyclopsStateMachine();
-            var state = new NestedGenericState<string, int>();
-            fsm.PushState(state);
-            fsm.Update();
-            
-            fsm.WithStateStackSnapshot(states =>
-            {
-                Assert.AreEqual("NestedGenericState<String,Int32>", states[0].ShortName);
-            });
-        }
-
-        [Test]
-        public void TransitionTarget_WithAttribute_UsesCustomName()
-        {
-            var fsm = new CyclopsStateMachine();
-            var stateA = new UnnamedTestState();
-            var stateB = new NamedTestState();
+            var stateA = new CyclopsState { Name = "State A" };
+            var stateB = new CyclopsState { Name = "State B" };
             
             stateA.AddTransition(stateB, () => false);
             fsm.PushState(stateA);
@@ -116,25 +75,8 @@ namespace Cyclops.States.Tests
             
             fsm.WithStateStackSnapshot(states =>
             {
-                Assert.AreEqual("My Custom State", states[0].Transitions[0].TargetShortName);
-                Assert.AreEqual("My Custom State", states[0].Transitions[0].TargetName);
-            });
-        }
-
-        [Test]
-        public void TransitionTarget_GenericState_FormatsCorrectly()
-        {
-            var fsm = new CyclopsStateMachine();
-            var stateA = new UnnamedTestState();
-            var stateB = new GenericTestState<float>();
-            
-            stateA.AddTransition(stateB, () => false);
-            fsm.PushState(stateA);
-            fsm.Update();
-            
-            fsm.WithStateStackSnapshot(states =>
-            {
-                Assert.AreEqual("GenericTestState<Single>", states[0].Transitions[0].TargetShortName);
+                Assert.AreEqual("State B", states[0].Transitions[0].TargetShortName);
+                Assert.AreEqual("State B", states[0].Transitions[0].TargetName);
             });
         }
 
@@ -142,7 +84,7 @@ namespace Cyclops.States.Tests
         public void TypeNameCache_IsCached()
         {
             var fsm = new CyclopsStateMachine();
-            var state = new UnnamedTestState();
+            var state = new CyclopsState();
             fsm.PushState(state);
             fsm.Update();
             
@@ -167,9 +109,9 @@ namespace Cyclops.States.Tests
         public void MixedStates_AllNamesCorrect()
         {
             var fsm = new CyclopsStateMachine();
-            var stateA = new NamedTestState();
-            var stateB = new UnnamedTestState();
-            var stateC = new GenericTestState<string>();
+            var stateA = new CyclopsState { Name = "Custom A" };
+            var stateB = new CyclopsState(); // Uses type name
+            var stateC = new CyclopsState { Name = "Custom C" };
             
             // Set up push chain
             stateA.AddPushTransition(stateB, () => true);
@@ -184,11 +126,10 @@ namespace Cyclops.States.Tests
             fsm.WithStateStackSnapshot(states =>
             {
                 Assert.AreEqual(3, states.Count);
-                Assert.AreEqual("My Custom State", states[0].ShortName);
-                Assert.AreEqual("UnnamedTestState", states[1].ShortName);
-                Assert.AreEqual("GenericTestState<String>", states[2].ShortName);
+                Assert.AreEqual("Custom A", states[0].ShortName);
+                Assert.AreEqual("CyclopsState", states[1].ShortName);
+                Assert.AreEqual("Custom C", states[2].ShortName);
             });
         }
     }
 }
-

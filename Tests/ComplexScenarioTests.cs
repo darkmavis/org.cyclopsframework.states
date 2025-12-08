@@ -111,8 +111,8 @@ namespace Cyclops.States.Tests
                 int index = i;
                 states[i] = new CyclopsState
                 {
-                    Updating = () => updateCounts[index]++,
-                    BackgroundUpdating = () => updateCounts[index]++
+                    OnUpdate = () => updateCounts[index]++,
+                    OnBackgroundUpdate = () => updateCounts[index]++
                 };
                 stateMachine.PushState(states[i]);
             }
@@ -129,4 +129,3 @@ namespace Cyclops.States.Tests
         }
     }
 }
-

@@ -26,9 +26,9 @@ namespace Cyclops.States.Tests
         {
             var exitOrder = new List<string>();
             var stateMachine = new CyclopsStateMachine();
-            var stateA = new CyclopsState { Exited = () => exitOrder.Add("A") };
-            var stateB = new CyclopsState { Exited = () => exitOrder.Add("B") };
-            var stateC = new CyclopsState { Exited = () => exitOrder.Add("C") };
+            var stateA = new CyclopsState { OnExit = () => exitOrder.Add("A") };
+            var stateB = new CyclopsState { OnExit = () => exitOrder.Add("B") };
+            var stateC = new CyclopsState { OnExit = () => exitOrder.Add("C") };
             
             stateMachine.PushState(stateA);
             stateMachine.PushState(stateB);
@@ -79,4 +79,3 @@ namespace Cyclops.States.Tests
         }
     }
 }
-

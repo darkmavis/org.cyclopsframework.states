@@ -48,7 +48,7 @@ namespace Cyclops.States.Tests
         {
             int updateCount = 0;
             var stateMachine = new CyclopsStateMachine();
-            var stateA = new CyclopsState { Updating = () => ++updateCount };
+            var stateA = new CyclopsState { OnUpdate = () => ++updateCount };
             var stateB = new CyclopsState();
             
             stateA.AddTransition(stateB, () => false);
@@ -66,4 +66,3 @@ namespace Cyclops.States.Tests
         }
     }
 }
-

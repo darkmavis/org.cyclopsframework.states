@@ -38,7 +38,7 @@ namespace Cyclops.States.Tests
             var stateA = new CyclopsState();
             var stateB = new CyclopsState();
             bool enteredB = false;
-            stateB.Entered = () => enteredB = true;
+            stateB.OnEnter = () => enteredB = true;
             
             stateA.AddExitTransition(stateB);
             stateMachine.PushState(stateA);
@@ -92,4 +92,3 @@ namespace Cyclops.States.Tests
         }
     }
 }
-

@@ -25,7 +25,7 @@ namespace Cyclops.States.Tests
         {
             int enterCount = 0;
             var stateMachine = new CyclopsStateMachine();
-            var state = new CyclopsState { Entered = () => ++enterCount };
+            var state = new CyclopsState { OnEnter = () => ++enterCount };
             
             stateMachine.PushState(state);
             stateMachine.Update();
@@ -70,4 +70,3 @@ namespace Cyclops.States.Tests
         }
     }
 }
-

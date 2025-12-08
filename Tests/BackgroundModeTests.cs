@@ -29,8 +29,8 @@ namespace Cyclops.States.Tests
             var stateMachine = new CyclopsStateMachine();
             var stateA = new CyclopsState
             {
-                Updating = () => ++foregroundUpdates,
-                BackgroundUpdating = () => ++backgroundUpdates
+                OnUpdate = () => ++foregroundUpdates,
+                OnBackgroundUpdate = () => ++backgroundUpdates
             };
             var stateB = new CyclopsState();
             
@@ -56,7 +56,7 @@ namespace Cyclops.States.Tests
             var stateMachine = new CyclopsStateMachine();
             var stateA = new CyclopsState
             {
-                BackgroundModeEntered = () => enteredBackground = true
+                OnEnterBackground = () => enteredBackground = true
             };
             var stateB = new CyclopsState();
             
@@ -80,7 +80,7 @@ namespace Cyclops.States.Tests
             var stateMachine = new CyclopsStateMachine();
             var stateA = new CyclopsState
             {
-                BackgroundModeExited = () => exitedBackground = true
+                OnExitBackground = () => exitedBackground = true
             };
             var stateB = new CyclopsState();
             
@@ -100,4 +100,3 @@ namespace Cyclops.States.Tests
         }
     }
 }
-

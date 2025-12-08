@@ -2,15 +2,15 @@
 
 ## What This Package Does
 
-Cyclops States is a **Unity state machine library** that provides a flexible FSM (Finite State Machine) with push-down automata (PDA) capabilities for game state management. It replaces clunky MonoBehaviour-based state patterns with clean, composable, async-aware states.
+Cyclops States is a **Unity state machine library** that provides a flexible FSM (Finite State Machine) with push-down automata (PDA) capabilities and behavior tree (BT) support for game state management. It uses composition over inheritance — a single sealed `CyclopsState` class handles all use cases.
 
 ## Core Architecture
 
 ```
 CyclopsStateMachine
-    └── manages a LinkedList stack of CyclopsBaseState instances
-         └── CyclopsState (concrete, uses Action delegates)
-         └── Custom subclasses (override virtual methods)
+    └── manages a LinkedList stack of CyclopsState instances
+         └── CyclopsState (sealed, uses Action delegates)
+         └── CyclopsStateExtensions (async helpers, delegate transitions)
 ```
 
 ### Key Files
@@ -18,8 +18,8 @@ CyclopsStateMachine
 | File | Purpose |
 |------|---------|
 | `CyclopsStateMachine.cs` | Orchestrates the state stack; calls `Update()` on states |
-| `CyclopsBaseState.cs` | Abstract base with transitions, lifecycle hooks, async helpers |
-| `CyclopsState.cs` | Lightweight concrete state using `Action` properties |
+| `CyclopsState.cs` | Sealed state class with lifecycle hooks and BT support |
+| `CyclopsStateExtensions.cs` | Extension methods for async helpers and delegate-based transitions |
 | `CyclopsStateTransition.cs` | Data struct: `Condition`, `Target`, `Op` |
 | `StackOp.cs` | Enum: `Replace`, `Push`, `Pop` |
 
@@ -39,33 +39,68 @@ Each operation has matching overloads:
 
 ```csharp
 // Predicate-based (condition checked each frame)
-AddTransition(target, () => condition);
-AddPushTransition(target, () => condition);
-AddPopTransition(() => condition);
+state.AddTransition(target, () => condition);
+state.AddPushTransition(target, () => condition);
+state.AddPopTransition(() => condition);
 
-// Delegate-based (fires on Action invocation)
-AddTransition(target, ref myAction);
-AddPushTransition(target, ref myAction);
-AddPopTransition(ref myAction);
+// Delegate-based (fires on Action invocation) - extension methods
+state.AddTransition(target, ref myAction);
+state.AddPushTransition(target, ref myAction);
+state.AddPopTransition(ref myAction);
 
 // Generic variants exist for Action<T> through Action<T1,T2,T3,T4>
+```
+
+## Behavior Tree Support
+
+States support success/failure reporting for BT-style usage:
+
+```csharp
+public enum BtResult { Running, Success, Failure }
+
+// In state update logic:
+state.OnUpdate = () =>
+{
+    if (targetFound) state.Succeed();
+    else if (timeout) state.Fail();
+};
+
+// BT-aware transitions:
+state.OnSuccess(nextState);
+state.OnFailure(fallbackState);
+state.OnComplete(anyResultState);
 ```
 
 ## State Lifecycle
 
 ```
-Start() → OnEnter() → [OnUpdate() | OnBackgroundUpdate()] → OnExit()
+Start() → OnEnter → [OnUpdate | OnBackgroundUpdate] → OnExit
                               ↑
-               OnEnterBackgroundMode() / OnExitBackgroundMode()
+               OnEnterBackground / OnExitBackground
 ```
 
-- **Foreground**: Top of stack, receives `OnUpdate()`
-- **Background**: Below top, receives `OnBackgroundUpdate()`
-- States track `IsActive`, `IsForegroundState`, `IsStopping`
+- **Foreground**: Top of stack, receives `OnUpdate`
+- **Background**: Below top, receives `OnBackgroundUpdate`
+- States track `IsActive`, `IsForegroundState`, `Result`
+
+### Lifecycle Hooks
+
+```csharp
+var state = new CyclopsState
+{
+    Name = "GamePlay",              // Optional debug name
+    OnEnter = () => { },            // Called when state starts
+    OnExit = () => { },             // Called when state stops
+    OnUpdate = () => { },           // Called each frame (foreground)
+    OnBackgroundUpdate = () => { }, // Called each frame (background)
+    OnEnterBackground = () => { },  // Called when pushed to background
+    OnExitBackground = () => { }    // Called when returned to foreground
+};
+```
 
 ## Async Integration
 
-Each state has an `ExitCancellationToken` that auto-cancels when the state exits:
+Extension methods provide async helpers tied to state lifetime:
 
 ```csharp
 await state.WaitForSecondsAsync(1f);   // Auto-cancelled on exit
@@ -75,7 +110,7 @@ await state.FixedUpdateAsync();
 await state.FromAsyncOperation(op);
 ```
 
-This enables fire-and-forget async patterns tied to state lifetime.
+Each state has an `ExitCancellationToken` that auto-cancels when the state exits.
 
 ## Predictable Unwinding (Structured Concurrency)
 
@@ -85,7 +120,7 @@ The state stack provides **deterministic cleanup even when states fail or are fo
 // ForceStop() guarantees ordered teardown
 while (_stateLinkedStack.Count != 0)
 {
-    TopState.StopImmediately();      // Cancel token + OnExit()
+    TopState.StopImmediately();      // Cancel token + OnExit
     _stateLinkedStack.RemoveLast();  // Pop from stack
 }
 ```
@@ -94,23 +129,17 @@ while (_stateLinkedStack.Count != 0)
 
 1. **Ordered teardown** — States exit top-to-bottom; no state is skipped
 2. **Async operations can't outlive their state** — `ExitCancellationToken` kills them immediately
-3. **`OnExit()` always runs** — Cleanup logic executes even during forced unwinding
-4. **Silent cancellation** — Async helpers catch `OperationCanceledException` internally; cancelled operations don't throw
-
-This is similar to:
-- **C++ RAII** — Destructors run during stack unwinding, even on exception
-- **Kotlin coroutine scopes / Swift task groups** — Child tasks cancel when parent scope exits
-- **Rust's Drop trait** — Guaranteed cleanup regardless of how scope exits
-
-Unlike Unity coroutines (which can leave dangling operations when stopped), the cancellation token pattern ensures no async work survives its state. The lifetime hierarchy is enforced, and teardown is predictable regardless of what each state was doing when unwinding begins.
+3. **`OnExit` always runs** — Cleanup logic executes even during forced unwinding
+4. **Silent cancellation** — Async helpers catch `OperationCanceledException` internally
 
 ## Common Patterns
 
 ### Basic FSM
+
 ```csharp
 var fsm = new CyclopsStateMachine();
-var gameplay = new CyclopsState { Entered = () => Debug.Log("Play!") };
-var gameOver = new CyclopsState { Entered = () => Debug.Log("Game Over") };
+var gameplay = new CyclopsState { OnEnter = () => Debug.Log("Play!") };
+var gameOver = new CyclopsState { OnEnter = () => Debug.Log("Game Over") };
 
 gameplay.AddTransition(gameOver, () => playerDead);
 fsm.PushState(gameplay);
@@ -120,6 +149,7 @@ fsm.Update();
 ```
 
 ### Modal Overlay (Push/Pop)
+
 ```csharp
 var hud = new CyclopsState();
 var pauseMenu = new CyclopsState();
@@ -128,7 +158,29 @@ hud.AddPushTransition(pauseMenu, () => Input.GetKeyDown(KeyCode.Escape));
 pauseMenu.AddPopTransition(() => Input.GetKeyDown(KeyCode.Escape));
 ```
 
+### Behavior Tree Node
+
+```csharp
+var findTarget = new CyclopsState
+{
+    Name = "FindTarget",
+    OnUpdate = () =>
+    {
+        target = ScanForEnemy();
+        if (target != null) findTarget.Succeed();
+        else if (searchTimeout) findTarget.Fail();
+    }
+};
+
+var attack = new CyclopsState { Name = "Attack" };
+var patrol = new CyclopsState { Name = "Patrol" };
+
+findTarget.OnSuccess(attack);
+findTarget.OnFailure(patrol);
+```
+
 ### Exit Transition
+
 ```csharp
 state.AddExitTransition(nextState); // Triggers when state.Stop() is called
 ```
@@ -139,15 +191,13 @@ state.AddExitTransition(nextState); // Triggers when state.Stop() is called
 
 The library is designed around this principle:
 - States have no reference to their host machine — they can only signal transitions via pre-declared conditions
-- States call `Stop()` to request exit, but don't control what happens next (exit transitions do)
+- States call `Stop()`, `Succeed()`, or `Fail()` to request exit, but don't control what happens next
 - The machine's `Update()` loop evaluates all transitions — states don't imperatively push other states
 
 **Why this matters:**
 - **Predictability**: The entire state graph is known upfront and can be reasoned about
 - **Testability**: You can verify reachable states from transitions alone
 - **Decoupling**: States don't know about the machine or each other — only their own lifecycle
-
-If you pass the state machine into states, they can call `PushState()` directly, bypassing the transition system. This breaks encapsulation and makes the state graph unpredictable.
 
 ```csharp
 // Bootstrap: wire everything, then only call Update()
@@ -163,20 +213,24 @@ while (running) fsm.Update();
 
 ## Implementation Notes
 
-1. **State reuse**: States can be re-entered after exiting (new `CancellationTokenSource` created)
-2. **Transition pooling**: Transitions list uses `ListPool<T>` — call `Dispose()` when done
-3. **Force stop**: `CyclopsStateMachine.ForceStop()` immediately stops all states in order
-4. **No transition removal**: By design, transitions cannot be removed once added
+1. **Composition over inheritance**: Single sealed `CyclopsState` class — no subclassing required
+2. **State reuse**: States can be re-entered after exiting (new `CancellationTokenSource` created)
+3. **Transition pooling**: Transitions list uses `ListPool<T>` — call `Dispose()` when done
+4. **Force stop**: `CyclopsStateMachine.ForceStop()` immediately stops all states in order
+5. **No transition removal**: By design, transitions cannot be removed once added
+6. **BT Result**: Defaults to `BtResult.Running`; set via `Succeed()` or `Fail()`
 
 ## Testing
 
-Unit tests in `Tests/StateTests.cs` cover:
-- Push transition mechanics
+Unit tests cover:
+- Push/Pop/Replace transition mechanics
 - Exit-on-action behavior
 - Lifecycle callback counts (enter, update, background, exit)
+- Background mode transitions
+- Force stop ordering
+- State reuse and cancellation token renewal
 
 ## Dependencies
 
 - Unity 2023.3+ / Unity 6000
 - Uses: `UnityEngine.Pool`, `UnityEngine.Awaitable`, `System.Threading.CancellationToken`
-

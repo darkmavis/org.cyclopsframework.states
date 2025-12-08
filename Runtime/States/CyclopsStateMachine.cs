@@ -30,27 +30,36 @@ namespace Cyclops.States
         public TransitionSnapshot[] Snapshots { get; init; }
     }
 
+    /// <summary>
+    /// <para>Manages a stack of <see cref="CyclopsState"/> instances.</para>
+    /// <para>Operates as a classic FSM until states are stacked, at which point it becomes a push-down automata.</para>
+    /// <para>For a comprehensive explanation of the state pattern and its relatives, please see:
+    /// https://gameprogrammingpatterns.com/state.html</para>
+    /// </summary>
     public class CyclopsStateMachine
     {
-        private readonly LinkedList<CyclopsBaseState> _stateLinkedStack = new();
-        private readonly Queue<CyclopsBaseState> _pushQueue = new();
-        private CyclopsBaseState _nextState;
+        private readonly LinkedList<CyclopsState> _stateLinkedStack = new();
+        private readonly Queue<CyclopsState> _pushQueue = new();
+        private CyclopsState _nextState;
         private bool _isForceStopping;
-
-        // Cached reflection info for accessing private transitions
-        private static readonly FieldInfo TransitionsField =
-            typeof(CyclopsBaseState).GetField("_transitions", BindingFlags.NonPublic | BindingFlags.Instance);
 
         // Cache for type names (type -> (fullName, shortName))
         private static readonly Dictionary<Type, (string name, string shortName)> TypeNameCache = new();
 
         // Cache for transition snapshots per state instance (invalidated if count changes)
-        private static readonly Dictionary<CyclopsBaseState, TransitionCache> TransitionSnapshotCache = new();
+        private static readonly Dictionary<CyclopsState, TransitionCache> TransitionSnapshotCache = new();
 
         // Reusable empty array to avoid allocations
         private static readonly TransitionSnapshot[] EmptyTransitions = Array.Empty<TransitionSnapshot>();
 
-        public CyclopsBaseState Context { get; private set; }
+        /// <summary>
+        /// The current context state (last state that was updated).
+        /// </summary>
+        public CyclopsState Context { get; private set; }
+
+        /// <summary>
+        /// Whether the state stack is empty.
+        /// </summary>
         public bool IsIdle => _stateLinkedStack.Count == 0;
 
         /// <summary>
@@ -58,14 +67,21 @@ namespace Cyclops.States
         /// </summary>
         public int StateCount => _stateLinkedStack.Count;
 
-        private CyclopsBaseState TopState => _stateLinkedStack.Last.Value;
+        private CyclopsState TopState => _stateLinkedStack.Last.Value;
 
-        public void PushState(CyclopsBaseState state)
+        /// <summary>
+        /// Push a state onto the stack. It will be started on the next Update().
+        /// </summary>
+        public void PushState(CyclopsState state)
         {
             state.IsForegroundState = true;
             _pushQueue.Enqueue(state);
         }
 
+        /// <summary>
+        /// Immediately stop all states and clear the stack.
+        /// States are stopped in reverse order (top to bottom).
+        /// </summary>
         public void ForceStop()
         {
             _pushQueue.Clear();
@@ -79,9 +95,12 @@ namespace Cyclops.States
             _isForceStopping = true;
         }
 
+        /// <summary>
+        /// Update the state machine. Call once per frame.
+        /// </summary>
         public void Update()
         {
-            while (_pushQueue.TryDequeue(out CyclopsBaseState state))
+            while (_pushQueue.TryDequeue(out CyclopsState state))
             {
                 _stateLinkedStack.AddLast(state);
             }
@@ -89,14 +108,13 @@ namespace Cyclops.States
             if (IsIdle)
                 return;
 
-            CyclopsBaseState topState = TopState;
+            CyclopsState topState = TopState;
 
-            foreach (CyclopsBaseState backgroundState in _stateLinkedStack)
+            foreach (CyclopsState backgroundState in _stateLinkedStack)
             {
                 if (backgroundState == topState)
                     continue;
 
-                // Could set this to null later, but would rather not.
                 Context = backgroundState;
 
                 // In case of pushing multiple states onto the stack quickly.
@@ -104,7 +122,7 @@ namespace Cyclops.States
                 {
                     // We'll say this is a foreground state, but it won't be for long.
                     backgroundState.IsForegroundState = true;
-                    backgroundState.Start(); // <-- calls: OnEnter
+                    backgroundState.Start();
                 }
 
                 if (backgroundState.IsForegroundState)
@@ -152,8 +170,6 @@ namespace Cyclops.States
                 _stateLinkedStack.RemoveLast();
 
                 // Immediately promote the new top state to foreground.
-                // This ensures IsForegroundState is always accurate after a pop,
-                // not delayed until the next Update() cycle.
                 if (!IsIdle)
                 {
                     TopState.IsForegroundState = true;
@@ -166,21 +182,22 @@ namespace Cyclops.States
 
             PushState(_nextState);
         }
-        
+
+        // =========== Debug Monitoring API ===========
+
         /// <summary>
         /// Provides a snapshot of the current state stack for debug visualization.
         /// States are passed bottom-to-top (index 0 is the bottom of the stack).
         /// The list is pooled and only valid for the duration of the callback.
         /// </summary>
-        /// <param name="action">Action to perform with the snapshot list.</param>
         public void WithStateStackSnapshot(Action<IReadOnlyList<StateSnapshot>> action)
         {
             var list = ListPool<StateSnapshot>.Get();
             try
             {
-                foreach (CyclopsBaseState state in _stateLinkedStack)
+                foreach (CyclopsState state in _stateLinkedStack)
                     list.Add(CreateStateSnapshot(state));
-                
+
                 action(list);
             }
             finally
@@ -188,23 +205,20 @@ namespace Cyclops.States
                 ListPool<StateSnapshot>.Release(list);
             }
         }
-        
+
         /// <summary>
         /// Provides a snapshot of the current state stack and returns a computed result.
         /// States are passed bottom-to-top (index 0 is the bottom of the stack).
         /// The list is pooled and only valid for the duration of the callback.
         /// </summary>
-        /// <typeparam name="T">Return type.</typeparam>
-        /// <param name="func">Function to compute a result from the snapshot list.</param>
-        /// <returns>The computed result.</returns>
         public T WithStateStackSnapshot<T>(Func<IReadOnlyList<StateSnapshot>, T> func)
         {
             var list = ListPool<StateSnapshot>.Get();
             try
             {
-                foreach (CyclopsBaseState state in _stateLinkedStack)
+                foreach (CyclopsState state in _stateLinkedStack)
                     list.Add(CreateStateSnapshot(state));
-                
+
                 return func(list);
             }
             finally
@@ -212,25 +226,24 @@ namespace Cyclops.States
                 ListPool<StateSnapshot>.Release(list);
             }
         }
-        
+
         /// <summary>
         /// Enumerates the state stack from bottom to top, invoking the callback for each state.
         /// Zero-allocation after initial cache warmup.
         /// </summary>
-        /// <param name="visitor">Callback invoked for each state with its index (0 = bottom).</param>
         public void VisitStateStack(Action<int, StateSnapshot> visitor)
         {
             int index = 0;
-            foreach (CyclopsBaseState state in _stateLinkedStack)
+            foreach (CyclopsState state in _stateLinkedStack)
             {
                 visitor(index++, CreateStateSnapshot(state));
             }
         }
-        
-        private StateSnapshot CreateStateSnapshot(CyclopsBaseState state)
+
+        private StateSnapshot CreateStateSnapshot(CyclopsState state)
         {
-            (string name, string shortName) = GetStateNames(state.GetType());
-            
+            (string name, string shortName) = GetStateNames(state);
+
             return new StateSnapshot
             {
                 Name = name,
@@ -240,13 +253,19 @@ namespace Cyclops.States
                 Transitions = GetTransitionSnapshots(state)
             };
         }
-        
-        private static (string name, string shortName) GetStateNames(Type stateType)
+
+        private static (string name, string shortName) GetStateNames(CyclopsState state)
         {
-            // Check cache first
+            // If state has a custom Name, use it
+            if (!string.IsNullOrEmpty(state.Name))
+                return (state.Name, state.Name);
+
+            Type stateType = state.GetType();
+
+            // Check cache
             if (TypeNameCache.TryGetValue(stateType, out var cached))
                 return cached;
-            
+
             // Check for custom attribute
             var attr = stateType.GetCustomAttribute<CyclopsStateNameAttribute>();
             if (attr != null)
@@ -255,20 +274,20 @@ namespace Cyclops.States
                 TypeNameCache[stateType] = result;
                 return result;
             }
-            
+
             // Derive from type name
             string fullName = stateType.FullName ?? stateType.Name;
             string shortName = GetShortTypeName(stateType);
-            
+
             var names = (fullName, shortName);
             TypeNameCache[stateType] = names;
             return names;
         }
-        
+
         private static string GetShortTypeName(Type type)
         {
             string name = type.Name;
-            
+
             // Handle generic types: MyState`1 -> MyState<T>
             int backtickIndex = name.IndexOf('`');
             if (backtickIndex > 0 && type.IsGenericType)
@@ -278,47 +297,44 @@ namespace Cyclops.States
                 string argsStr = string.Join(",", Array.ConvertAll(args, t => GetShortTypeName(t)));
                 return $"{baseName}<{argsStr}>";
             }
-            
+
             return name;
         }
-        
-        private static IReadOnlyList<TransitionSnapshot> GetTransitionSnapshots(CyclopsBaseState state)
+
+        private static IReadOnlyList<TransitionSnapshot> GetTransitionSnapshots(CyclopsState state)
         {
-            // Access private _transitions field via reflection
-            if (TransitionsField?.GetValue(state) is not List<CyclopsStateTransition> transitions)
-                return EmptyTransitions;
-            
+            IReadOnlyList<CyclopsStateTransition> transitions = state.Transitions;
             int currentCount = transitions.Count;
-            
+
             // Check cache - invalidate if transition count changed
             if (TransitionSnapshotCache.TryGetValue(state, out TransitionCache cached))
             {
                 if (cached.Count == currentCount)
                     return cached.Snapshots;
             }
-            
+
             // Build new cache entry
             if (currentCount == 0)
             {
                 TransitionSnapshotCache[state] = new TransitionCache { Count = 0, Snapshots = EmptyTransitions };
                 return EmptyTransitions;
             }
-            
+
             var snapshots = new TransitionSnapshot[currentCount];
-            
+
             for (int i = 0; i < currentCount; i++)
             {
                 CyclopsStateTransition t = transitions[i];
-                CyclopsBaseState target = t.Target;
-                
+                CyclopsState target = t.Target;
+
                 string targetName = null;
                 string targetShortName = null;
-                
+
                 if (target != null)
                 {
-                    (targetName, targetShortName) = GetStateNames(target.GetType());
+                    (targetName, targetShortName) = GetStateNames(target);
                 }
-                
+
                 snapshots[i] = new TransitionSnapshot
                 {
                     Op = t.Op,
@@ -326,11 +342,11 @@ namespace Cyclops.States
                     TargetShortName = targetShortName
                 };
             }
-            
+
             TransitionSnapshotCache[state] = new TransitionCache { Count = currentCount, Snapshots = snapshots };
             return snapshots;
         }
-        
+
         /// <summary>
         /// Clears all debug monitoring caches. Call this if you're done with debug visualization
         /// and want to free memory, or if you've disposed states that were previously monitored.

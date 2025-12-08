@@ -18,10 +18,24 @@ using System;
 
 namespace Cyclops.States
 {
+    /// <summary>
+    /// Represents a transition from one state to another.
+    /// </summary>
     public struct CyclopsStateTransition
     {
+        /// <summary>
+        /// Predicate that determines if this transition should fire.
+        /// </summary>
         public Func<bool> Condition { get; set; }
-        public CyclopsBaseState Target { get; set; }
+
+        /// <summary>
+        /// Target state to transition to. Null for Pop operations.
+        /// </summary>
+        public CyclopsState Target { get; set; }
+
+        /// <summary>
+        /// Stack operation to perform (Replace, Push, or Pop).
+        /// </summary>
         public StackOp Op { get; set; }
     }
 }

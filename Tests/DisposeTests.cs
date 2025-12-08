@@ -14,7 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using NUnit.Framework;
 
 namespace Cyclops.States.Tests
@@ -29,33 +28,29 @@ namespace Cyclops.States.Tests
         }
         
         [Test]
-        public void Dispose_CustomDispose_IsCalled()
+        public void Dispose_CanBeCalledAfterStateUsed()
         {
-            bool customDisposeCalled = false;
-            var state = new TestDisposableState(() => customDisposeCalled = true);
+            var stateMachine = new CyclopsStateMachine();
+            var state = new CyclopsState();
             
-            state.Dispose();
+            stateMachine.PushState(state);
+            stateMachine.Update();
+            stateMachine.ForceStop();
             
-            Assert.IsTrue(customDisposeCalled);
-        }
-    }
-    
-    /// <summary>
-    /// Helper class to test custom Dispose behavior
-    /// </summary>
-    public class TestDisposableState : CyclopsBaseState
-    {
-        private readonly Action _onDispose;
-        
-        public TestDisposableState(Action onDispose)
-        {
-            _onDispose = onDispose;
+            Assert.DoesNotThrow(() => state.Dispose());
         }
         
-        protected override void Dispose(bool isDisposing)
+        [Test]
+        public void Dispose_CanBeCalledMultipleTimes()
         {
-            _onDispose?.Invoke();
+            var state = new CyclopsState();
+            
+            Assert.DoesNotThrow(() =>
+            {
+                state.Dispose();
+                state.Dispose();
+                state.Dispose();
+            });
         }
     }
 }
-
