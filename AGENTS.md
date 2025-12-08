@@ -11,6 +11,7 @@ CyclopsStateMachine
     └── manages a LinkedList stack of CyclopsState instances
          └── CyclopsState (sealed, uses Action delegates)
          └── CyclopsStateExtensions (async helpers, delegate transitions)
+         └── Bt (static factory for BT nodes: Sequence, Selector, decorators)
 ```
 
 ### Key Files
@@ -22,6 +23,7 @@ CyclopsStateMachine
 | `CyclopsStateExtensions.cs` | Extension methods for async helpers and delegate-based transitions |
 | `CyclopsStateTransition.cs` | Data struct: `Condition`, `Target`, `Op` |
 | `StackOp.cs` | Enum: `Replace`, `Push`, `Pop` |
+| `BehaviorTree/Bt.cs` | Static factory for BT nodes (Sequence, Selector, decorators, leaves) |
 
 ## Transition Types
 
@@ -70,6 +72,83 @@ state.OnSuccess(nextState);
 state.OnFailure(fallbackState);
 state.OnComplete(anyResultState);
 ```
+
+### Bt Factory (Static Factory for BT Nodes)
+
+The `Bt` static class provides factory methods for common BT node types. Composites manually tick their children (not pushed to the state stack), ensuring **children are reusable across traversals**.
+
+```csharp
+using Cyclops.States.BehaviorTree;
+
+// Composites
+Bt.Sequence(name, children...)   // Succeeds if all succeed; fails on first failure
+Bt.Selector(name, children...)   // Succeeds on first success; fails if all fail
+
+// Decorators
+Bt.Inverter(name, child)         // Inverts result: Success ↔ Failure
+Bt.Succeeder(name, child)        // Always succeeds
+Bt.Failer(name, child)           // Always fails
+Bt.Repeat(name, count, child)    // Repeats N times (-1 = forever); fails if child fails
+Bt.Retry(name, attempts, child)  // Retries on failure; succeeds on first success
+
+// Leaf nodes
+Bt.Action(name, () => { })                    // One-shot action, succeeds immediately
+Bt.Action(name, () => BtResult.Running)       // Tick function, runs until non-Running
+Bt.Condition(name, () => true)                // Succeeds if true, fails if false
+Bt.WaitFrames(name, frames)                   // Waits N frames, then succeeds
+```
+
+### BT Example: AI Behavior
+
+```csharp
+var ai = Bt.Selector("AI",
+    Bt.Sequence("Attack",
+        Bt.Condition("HasTarget", () => target != null),
+        Bt.Action("Fire", () => weapon.Fire())
+    ),
+    Bt.Sequence("Search",
+        Bt.Action("Scan", () =>
+        {
+            target = ScanForEnemy();
+            return target != null ? BtResult.Success : BtResult.Failure;
+        }),
+        Bt.Action("Pursue", () => BtResult.Running) // Runs until target lost
+    ),
+    Bt.Action("Patrol", () => patrol.Step())
+);
+
+// Push to state machine and tick
+fsm.PushState(ai);
+```
+
+### BT Design Philosophy
+
+**For users**: Just call `Bt.Sequence(...)`, push the result to your state machine, and it works. The API returns a `CyclopsState` like everything else — no special cases.
+
+**Under the hood**: Composites are states that internally orchestrate child states. This keeps the model unified:
+
+```
+CyclopsStateMachine stack:
+    [GameplayState]
+    [AIBehaviorTree]  ← This IS a CyclopsState, pushed normally
+         └── internally ticks: Selector → Sequence → Action
+```
+
+The root BT node participates in the PDA stack. Its children are its internal concern — like local variables inside a function. The composite manages them directly rather than pushing them to the machine's stack.
+
+**Why this design?**
+
+1. **Unified model** — FSM, PDA, and BT all use `CyclopsState`. No separate type hierarchies.
+
+2. **Bootstrap-only access preserved** — States don't get machine references. Composites orchestrate children without violating this principle.
+
+3. **Single-tick traversal** — Synchronous nodes (like `Bt.Action(() => DoThing())`) complete within one frame. The tree evaluates as fast as the logic allows.
+
+4. **Reusability** — Children are started/stopped by their parent. After backtracking, the same nodes can be traversed again — `Start()` resets all state.
+
+5. **Full lifecycle** — Children get proper `OnEnter`, `OnUpdate`, `OnExit`, and `ExitCancellationToken` behavior.
+
+**Implementation detail**: Composites set `child.IsForegroundState = true` before ticking so that `OnUpdate` fires. This is semantically correct — the child IS the foreground concern of its parent's execution, even though it's not on the machine's stack.
 
 ## State Lifecycle
 
@@ -154,8 +233,8 @@ fsm.Update();
 var hud = new CyclopsState();
 var pauseMenu = new CyclopsState();
 
-hud.AddPushTransition(pauseMenu, () => Input.GetKeyDown(KeyCode.Escape));
-pauseMenu.AddPopTransition(() => Input.GetKeyDown(KeyCode.Escape));
+hud.AddPushTransition(pauseMenu, () => Keyboard.current.escapeKey.wasPressedThisFrame);
+pauseMenu.AddPopTransition(() => Keyboard.current.escapeKey.wasPressedThisFrame);
 ```
 
 ### Behavior Tree Node
@@ -207,8 +286,12 @@ var stateB = new CyclopsState();
 stateA.AddTransition(stateB, () => someCondition);
 fsm.PushState(stateA);
 
-// Runtime: just tick — never touch fsm directly again
-while (running) fsm.Update();
+// Drive with async — no MonoBehaviour needed
+while (!fsm.IsIdle && !Application.exitCancellationToken.IsCancellationRequested)
+{
+    await Awaitable.NextFrameAsync(Application.exitCancellationToken);
+    fsm.Update();
+}
 ```
 
 ## Implementation Notes
@@ -219,6 +302,7 @@ while (running) fsm.Update();
 4. **Force stop**: `CyclopsStateMachine.ForceStop()` immediately stops all states in order
 5. **No transition removal**: By design, transitions cannot be removed once added
 6. **BT Result**: Defaults to `BtResult.Running`; set via `Succeed()` or `Fail()`
+7. **BT composites as orchestrators**: `Bt.Sequence`, `Bt.Selector`, etc. return states that manually tick their children — keeping BT unified with FSM/PDA rather than introducing a separate execution model
 
 ## Testing
 
@@ -229,6 +313,9 @@ Unit tests cover:
 - Background mode transitions
 - Force stop ordering
 - State reuse and cancellation token renewal
+- BT composites (Sequence, Selector) and decorators (Inverter, Repeat, Retry, etc.)
+- BT node reusability across traversals
+- Nested composite behavior
 
 ## Dependencies
 
