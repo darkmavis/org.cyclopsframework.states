@@ -111,12 +111,11 @@ namespace Cyclops.States
         
         /// <summary>
         /// Add a transition from this state to a target state based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// <seealso cref="CyclopsStateMachine"/>
         /// </summary>
-        /// <param name="target">target state</param>
-        /// <param name="predicate">trigger condition</param>
+        /// <param name="transition">transition to add</param>
         public void AddTransition(CyclopsStateTransition transition)
         {
             _transitions.Add(transition);
@@ -124,7 +123,7 @@ namespace Cyclops.States
 
         /// <summary>
         /// Add a transition from this state to a target state based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// <seealso cref="CyclopsStateMachine"/>
         /// </summary>
@@ -137,7 +136,7 @@ namespace Cyclops.States
         
         /// <summary>
         /// Add a transition that pushes the target state above this state on the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -154,7 +153,7 @@ namespace Cyclops.States
         
         /// <summary>
         /// Add a transition that pops this state off the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="predicate">trigger condition</param>
@@ -170,7 +169,7 @@ namespace Cyclops.States
 
         /// <summary>
         /// Add an exit transition from this state to a target state that occurs when this state has stopped.
-        /// Feel free to add as many transitions as needed.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// <seealso cref="CyclopsStateMachine"/>
         /// </summary>
@@ -324,8 +323,8 @@ namespace Cyclops.States
         }
 
         /// <summary>
-        /// Add a transition from this state to the target state based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition from this state to the target state that fires when the action is invoked.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -352,8 +351,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition from this state to the target state based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition from this state to the target state that fires when the action is invoked.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -380,8 +379,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition from this state to the target state based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition from this state to the target state that fires when the action is invoked.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -408,8 +407,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition from this state to the target state based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition from this state to the target state that fires when the action is invoked.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -436,8 +435,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition from this state to the target state based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition from this state to the target state that fires when the action is invoked.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -464,8 +463,8 @@ namespace Cyclops.States
         }
 
         /// <summary>
-        /// Add a transition that pushes the target state above this state on the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pushes the target state above this state on the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -497,8 +496,8 @@ namespace Cyclops.States
         }
 
         /// <summary>
-        /// Add a transition that pushes the target state above this state on the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pushes the target state above this state on the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -530,8 +529,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pushes the target state above this state on the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pushes the target state above this state on the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -563,8 +562,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pushes the target state above this state on the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pushes the target state above this state on the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -596,8 +595,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pushes the target state above this state on the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pushes the target state above this state on the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="target">target state</param>
@@ -629,8 +628,8 @@ namespace Cyclops.States
         }
 
         /// <summary>
-        /// Add a transition that pops this state off the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pops this state off the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="multicastDelegate">trigger action</param>
@@ -661,8 +660,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pops this state off the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pops this state off the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="multicastDelegate">trigger action</param>
@@ -693,8 +692,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pops this state off the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pops this state off the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="multicastDelegate">trigger action</param>
@@ -725,8 +724,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pops this state off the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pops this state off the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="multicastDelegate">trigger action</param>
@@ -757,8 +756,8 @@ namespace Cyclops.States
         }
         
         /// <summary>
-        /// Add a transition that pops this state off the stack based on a condition.
-        /// Feel free to add as many transitions as needed.
+        /// Add a transition that pops this state off the stack.
+        /// If multiple transitions match, the first added takes priority.
         /// Transitions can not be removed, nor should they be.
         /// </summary>
         /// <param name="multicastDelegate">trigger action</param>

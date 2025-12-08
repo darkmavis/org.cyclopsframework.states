@@ -121,6 +121,15 @@ namespace Cyclops.States
             {
                 topState.StopImmediately();
                 _stateLinkedStack.RemoveLast();
+                
+                // Immediately promote the new top state to foreground.
+                // This ensures IsForegroundState is always accurate after a pop,
+                // not delayed until the next Update() cycle.
+                if (!IsIdle)
+                {
+                    TopState.IsForegroundState = true;
+                    TopState.JustExitedBackgroundMode = true;
+                }
             }
 
             if (_nextState is null)

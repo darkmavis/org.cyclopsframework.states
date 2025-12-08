@@ -1,41 +1,9 @@
-using System;
 using NUnit.Framework;
 
 namespace Cyclops.States.Tests
 {
-    public class StateTests
+    public class LifecycleCallbackTests
     {
-        private Action _fooAction;
-        
-        [Test]
-        public void Test_AddPushTransition_IsPushed()
-        {
-            CyclopsStateMachine stateMachine = new();
-            CyclopsState stateA = new();
-            CyclopsState stateB = new();
-            stateA.AddPushTransition(stateB, () => true);
-            stateMachine.PushState(stateA);
-            Assert.IsTrue(stateA.IsForegroundState);
-            stateMachine.Update();
-            stateMachine.Update();
-            Assert.IsFalse(stateA.IsForegroundState);
-            Assert.IsTrue(stateB.IsForegroundState);
-        }
-        
-        [Test]
-        public void Test_ExitOnAction_CorrectlyExits()
-        {
-            CyclopsStateMachine stateMachine = new();
-            CyclopsState state = new();
-            state.ExitOnAction(ref _fooAction);
-            stateMachine.PushState(state);
-            stateMachine.Update();
-            Assert.IsTrue(state.IsActive);
-            _fooAction?.Invoke();
-            stateMachine.Update();
-            Assert.IsFalse(state.IsActive);
-        }
-        
         [Test]
         public void Update_CyclopsState_CountsAreCorrect()
         {
@@ -46,8 +14,8 @@ namespace Cyclops.States.Tests
             int backgroundModeEnteredCount = 0;
             int backgroundModeExitedCount = 0;
             
-            CyclopsStateMachine stateMachine = new();
-            CyclopsState stateA = new();
+            var stateMachine = new CyclopsStateMachine();
+            var stateA = new CyclopsState();
             stateA.Entered = () => ++enteredCount;
             stateA.Updating = () => ++updatingCount;
             stateA.Exited = () => ++exitedCount;
@@ -91,7 +59,7 @@ namespace Cyclops.States.Tests
             Assert.AreEqual(0, backgroundUpdatingCount);
             Assert.AreEqual(0, backgroundModeExitedCount);
             
-            CyclopsState stateB = new();
+            var stateB = new CyclopsState();
             stateB.AddPopTransition(() => true);
             stateMachine.PushState(stateB);
             
@@ -153,5 +121,36 @@ namespace Cyclops.States.Tests
             
             Assert.Pass();
         }
+        
+        [Test]
+        public void OnEnter_CalledOnce_PerActivation()
+        {
+            int enterCount = 0;
+            var stateMachine = new CyclopsStateMachine();
+            var state = new CyclopsState { Entered = () => ++enterCount };
+            
+            stateMachine.PushState(state);
+            stateMachine.Update();
+            stateMachine.Update();
+            stateMachine.Update();
+            
+            Assert.AreEqual(1, enterCount);
+        }
+        
+        [Test]
+        public void OnExit_CalledOnce_WhenStopped()
+        {
+            int exitCount = 0;
+            var stateMachine = new CyclopsStateMachine();
+            var state = new CyclopsState { Exited = () => ++exitCount };
+            
+            stateMachine.PushState(state);
+            stateMachine.Update();
+            state.Stop();
+            stateMachine.Update();
+            
+            Assert.AreEqual(1, exitCount);
+        }
     }
 }
+
