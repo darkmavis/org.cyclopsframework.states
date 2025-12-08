@@ -1,4 +1,4 @@
-﻿// Cyclops States
+// Cyclops States
 // 
 // Copyright 2025 Mark Davis
 // 
@@ -18,10 +18,15 @@ using System;
 
 namespace Cyclops.States
 {
-    public struct CyclopsStateTransition
+    /// <summary>
+    /// Optional attribute to provide a custom display name for a state in debug overlays.
+    /// When present, the Name will be used instead of the class name.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    public sealed class CyclopsStateNameAttribute : Attribute
     {
-        public Func<bool> Condition { get; set; }
-        public CyclopsBaseState Target { get; set; }
-        public StackOp Op { get; set; }
+        public string Name { get; }
+        public CyclopsStateNameAttribute(string name) => Name = name;
     }
 }
+

@@ -1,4 +1,4 @@
-﻿// Cyclops States
+// Cyclops States
 // 
 // Copyright 2025 Mark Davis
 // 
@@ -14,14 +14,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-
 namespace Cyclops.States
 {
-    public struct CyclopsStateTransition
+    /// <summary>
+    /// Read-only snapshot of a transition for debug purposes.
+    /// </summary>
+    public readonly struct TransitionSnapshot
     {
-        public Func<bool> Condition { get; set; }
-        public CyclopsBaseState Target { get; set; }
-        public StackOp Op { get; set; }
+        /// <summary>Stack operation (Replace, Push, or Pop).</summary>
+        public StackOp Op { get; init; }
+        
+        /// <summary>Full name of the target state, or null for Pop transitions.</summary>
+        public string TargetName { get; init; }
+        
+        /// <summary>Short name of the target state (class name only), or null for Pop transitions.</summary>
+        public string TargetShortName { get; init; }
     }
 }
+

@@ -1,4 +1,4 @@
-﻿// Cyclops States
+// Cyclops States
 // 
 // Copyright 2025 Mark Davis
 // 
@@ -14,14 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-
-namespace Cyclops.States
+// ReSharper disable once CheckNamespace
+namespace System.Runtime.CompilerServices
 {
-    public struct CyclopsStateTransition
-    {
-        public Func<bool> Condition { get; set; }
-        public CyclopsBaseState Target { get; set; }
-        public StackOp Op { get; set; }
-    }
+    /// <summary>
+    /// Polyfill to enable C# 9 init-only property setters in Unity.
+    /// </summary>
+    internal static class IsExternalInit { }
 }
+
